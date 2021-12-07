@@ -319,6 +319,10 @@ class DnsClient:
             _, nameserver = self.walk(data, packet=packet)
             result = ".".join([str(x) for x in nameserver])
 
+        # MX
+        elif response_type == 15:
+            _, nameserver = self.walk(data, packet=packet)
+            result = ".".join([str(x) for x in nameserver])
         else:
             self.dump_packet(data)
             raise Exception(f"Unsupported response: {response_type} ({DNS_TYPE[response_type]})")
@@ -327,15 +331,19 @@ class DnsClient:
         
         return result
 
+
+
+
     def walk(self, data, packet, position=0):
         string = []
         total_length = 0
         while True:
             length = data[position]
             # cheks if first two bits are 1. 192 decimal is 0b11000000 binary. since we can ignore the next byte we dont have to unpack it to check the first two bits
-            offset = True if length & 192 else False
+            offset = True if length & 192 == 192 else False
             if offset:
-                offset_value = struct.unpack("!H", data[0:2])[0]
+                offset_value = struct.unpack("!H", data[position:position + 2])[0]
+                print(f"OFFSET: {offset_value & 16383}")
                 # offset is stored in the last 16 bits of the two octets. 16383 decimal is 0b0011111111111111 
                 data = packet[offset_value & 16383:]
                 _ , offset_value = self.walk(data=data, packet=packet)
@@ -359,7 +367,12 @@ class DnsClient:
 
     def dump_packet(self, packet):
         for x, y in enumerate(packet):
-            print(f"{x}: DEC: {y},\tHEX: {hex(y)},\tCHR: {chr(y)}")
+            CHR = ""
+            if 126 > y > 33:
+                CHR = chr(y)
+            else:
+                CHR = " "
+            print(f"{x}: DEC: {y:#03},\tHEX: {y:#04x},\tCHR: {CHR}, \tBIN: {y:#010b}")
 
     def a(self, hostname, request_type=None):
         a = self.send_request(hostname, request_type=request_type)
