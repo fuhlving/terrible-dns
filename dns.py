@@ -367,9 +367,6 @@ class DnsClient:
         print(json.dumps(a, indent=1))
 
 if __name__ == "__main__":
-    #a = DnsClient(nameserver="127.0.0.1")
     a = DnsClient()
     a.a(sys.argv[1], request_type=sys.argv[2])
-    #a.a("bos.no", request_type="txt")
-    #else:
-    #    a.a(sys.argv[1])
+
